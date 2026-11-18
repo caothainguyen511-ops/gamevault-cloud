@@ -37,10 +37,10 @@ page = renderer / "components" / "LocalEmulatorPage.tsx"
 page.write_text("""import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Cpu, RefreshCw, ShieldCheck } from "lucide-react";
 import type { JSX } from "react";
-import { GameVaultEmulator, type EmulatorCapabilities } from "../native/GameVaultEmulator";
+import { GameVaultEmulator, type GameVaultEmulatorCapabilities } from "../native/GameVaultEmulator";
 
 export function LocalEmulatorPage(): JSX.Element {
-  const [capabilities, setCapabilities] = useState<EmulatorCapabilities | null>(null);
+  const [capabilities, setCapabilities] = useState<GameVaultEmulatorCapabilities | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [prefixMessage, setPrefixMessage] = useState<string | null>(null);
@@ -59,6 +59,20 @@ export function LocalEmulatorPage(): JSX.Element {
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  const initializePrefix = async () => {
+    setPrefixBusy(true);
+    setPrefixMessage(null);
+    try {
+      const result = await GameVaultEmulator.initializePrefix();
+      setPrefixMessage(result.message);
+      await refresh();
+    } catch (e) {
+      setPrefixMessage(e instanceof Error ? e.message : "Prefix initialization failed.");
+    } finally {
+      setPrefixBusy(false);
+    }
+  };
 
   return (
     <section className="settings-page" style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
@@ -81,8 +95,13 @@ export function LocalEmulatorPage(): JSX.Element {
             <p><b>Box64:</b> {capabilities.box64Available ? "Available" : "Not installed"}</p>
             <p><b>Box86:</b> {capabilities.box86Available ? "Available" : "Not installed"}</p>
             <p><b>Graphics backend:</b> {capabilities.graphicsBackendAvailable ? "Available" : "Not configured"}</p>
+            <p><b>Private prefix:</b> {capabilities.prefixReady ? "Initialized" : "Not initialized"}</p>
             <p><b>EXE launch:</b> {capabilities.canLaunchExe ? "Ready" : "Unavailable"}</p>
             <p>{capabilities.message}</p>
+            <button type="button" onClick={() => void initializePrefix()} disabled={prefixBusy} style={{ marginTop: 8 }}>
+              {prefixBusy ? "Preparing…" : "Initialize private Windows environment"}
+            </button>
+            {prefixMessage && <p role="status">{prefixMessage}</p>}
           </>
         ) : <p>Native capability information is unavailable.</p>}
         <button type="button" onClick={() => void refresh()} disabled={loading} style={{ marginTop: 10 }}>
