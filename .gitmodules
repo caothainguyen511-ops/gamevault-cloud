@@ -1,0 +1,4 @@
+[submodule "engine"]
+	path = engine
+	url = https://github.com/priyanshrv1-oss/OpenNow-Android.git
+	branch = Android
