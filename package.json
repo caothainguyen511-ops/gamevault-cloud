@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "android:sync": "npm run build && cap sync android"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
@@ -14,7 +15,11 @@
     "typescript": "^5.7.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "lucide-react": "^0.468.0"
+    "lucide-react": "^0.468.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/android": "^6.2.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
 }
