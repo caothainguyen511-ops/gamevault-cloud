@@ -5,13 +5,14 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ANDROID_DIR="$ROOT/engine/opennow-stable/android"
 APK="$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk"
 
-if [[ ! -x "$ANDROID_DIR/gradlew" ]]; then
-  echo "::error::Android Gradle wrapper is missing or not executable: $ANDROID_DIR/gradlew"
+# The upstream wrapper is committed without its executable bit; restore it in CI.
+if [[ ! -f "$ANDROID_DIR/gradlew" || ! -f "$ANDROID_DIR/gradle/wrapper/gradle-wrapper.jar" ]]; then
+  echo "::error::Android Gradle wrapper files are missing from the pinned engine."
   exit 1
 fi
+chmod +x "$ANDROID_DIR/gradlew"
 
 cd "$ANDROID_DIR"
-chmod +x ./gradlew
 last_status=1
 for attempt in 1 2 3; do
   echo "::group::GameVault Android build attempt $attempt/3"
