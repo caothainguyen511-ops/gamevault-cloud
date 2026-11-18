@@ -22,7 +22,7 @@ config_path.write_text(json.dumps(config, indent=2) + "\n")
 # standard Android debug APK, which is signed with the Android debug key.
 gradle_path = root / "android/app/build.gradle"
 gradle = gradle_path.read_text()
-gradle = "\\n".join(line for line in gradle.splitlines() if not line.strip().startswith(("def keystorePropertiesFile", "def keystoreProperties =", "keystoreProperties.load("))) + "\\n"
+gradle = "\n".join(line for line in gradle.splitlines() if not line.strip().startswith(("def keystorePropertiesFile", "def keystoreProperties =", "keystoreProperties.load("))) + "\n"
 gradle = re.sub(r'\n    signingConfigs \{\n        release \{.*?\n        \}\n    \}\n', '\n', gradle, flags=re.S)
 gradle = gradle.replace('            signingConfig signingConfigs.release\n', '')
 gradle = gradle.replace('namespace = "com.zortos.opennow"', 'namespace = "com.gamevault.cloud"')
