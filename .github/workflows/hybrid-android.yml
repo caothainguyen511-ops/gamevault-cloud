@@ -59,16 +59,16 @@ jobs:
         working-directory: engine/opennow-stable
         run: npm ci
 
-      - name: Build cloud/WebRTC renderer
+      - name: Inject Windows Emulator page and native bridge
+        run: bash scripts/inject-native-emulator-bridge.sh
+
+      - name: Build cloud/WebRTC renderer with Hybrid page
         working-directory: engine/opennow-stable
         run: npm run build
 
       - name: Sync Capacitor Android
         working-directory: engine/opennow-stable
         run: npx cap sync android
-
-      - name: Inject native emulator capability bridge
-        run: bash scripts/inject-native-emulator-bridge.sh
 
       - name: Build APK with bounded retries
         run: bash scripts/build-android-retry.sh
