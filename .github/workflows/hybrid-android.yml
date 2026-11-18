@@ -28,6 +28,7 @@ jobs:
         shell: bash
         run: |
           test -f scripts/prepare-gamevault.sh
+          test -f scripts/inject-native-emulator-bridge.sh
           test -f engine/opennow-stable/package.json
           test -f engine/opennow-stable/android/gradlew
           test -f engine/opennow-stable/android/app/build.gradle
@@ -65,6 +66,9 @@ jobs:
       - name: Sync Capacitor Android
         working-directory: engine/opennow-stable
         run: npx cap sync android
+
+      - name: Inject native emulator capability bridge
+        run: bash scripts/inject-native-emulator-bridge.sh
 
       - name: Build APK with bounded retries
         run: bash scripts/build-android-retry.sh
