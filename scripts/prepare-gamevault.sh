@@ -77,9 +77,100 @@ for old, new in {
 css = css.replace("rgba(88, 217, 138,", "rgba(167, 139, 250,")
 css_path.write_text(css)
 
+# Keep the WebView inspectable in debug builds so startup failures can be diagnosed.
+config["android"]["webContentsDebuggingEnabled"] = True
+config_path.write_text(json.dumps(config, indent=2) + "\\n")
+
+# A visible boot fallback prevents a failed WebView bundle from looking like a blank app.
 index_path = renderer / "index.html"
 index = index_path.read_text().replace("#0a0a0c", "#100d18")
+boot_markup = """<div id="root">
+      <div id="gamevault-boot" style="min-height:100vh;display:grid;place-items:center;background:#100d18;color:#f5f3ff;font-family:Arial,sans-serif;padding:28px;box-sizing:border-box;text-align:center">
+        <div><div style="font-size:26px;font-weight:800;letter-spacing:1px">GAMEVAULT</div><p style="color:#b9aecf">Đang khởi động GameVault Cloud…</p><p style="font-size:13px;color:#8f86a3">Nếu màn hình này không tự chuyển, ứng dụng sẽ hiển thị hướng dẫn kiểm tra thay vì màn hình đen.</p></div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var root = document.getElementById("root");
+        function showBootError(message) {
+          if (!root || root.dataset.ready === "1") return;
+          var panel = document.getElementById("gamevault-boot");
+          if (!panel) return;
+          panel.innerHTML = "";
+          var title = document.createElement("div");
+          title.style.cssText = "font-size:24px;font-weight:800;margin-bottom:12px";
+          title.textContent = "GameVault chưa khởi động được";
+          var detail = document.createElement("p");
+          detail.style.cssText = "max-width:520px;color:#c4b5fd;overflow-wrap:anywhere";
+          detail.textContent = message || "Không tải được giao diện. Hãy thử mở lại ứng dụng.";
+          var hint = document.createElement("p");
+          hint.style.cssText = "font-size:13px;color:#9b92ad";
+          hint.textContent = "Nếu lỗi tiếp tục, hãy gửi ảnh màn hình này cho nhóm phát triển.";
+          panel.append(title, detail, hint);
+        }
+        window.addEventListener("error", function (event) {
+          showBootError(event.message || "Lỗi JavaScript khi tải ứng dụng.");
+        });
+        window.addEventListener("unhandledrejection", function (event) {
+          var reason = event.reason;
+          showBootError(reason && reason.message ? reason.message : "Lỗi khởi tạo ứng dụng.");
+        });
+        window.setTimeout(function () {
+          if (root && root.dataset.ready !== "1") {
+            showBootError("Giao diện không phản hồi sau 12 giây. Hãy kiểm tra Android System WebView/Chrome và thử khởi động lại.");
+          }
+        }, 12000);
+      })();
+    </script>"""
+index = index.replace('<div id="root"></div>', boot_markup)
 index_path.write_text(index)
+
+# Catch React render failures and show a readable diagnostic screen.
+main_path = renderer / "src/main.tsx"
+main = main_path.read_text()
+main = main.replace(
+    'ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(\\n  <React.StrictMode>\\n    <App />\\n  </React.StrictMode>,\\n);',
+    '''class StartupErrorBoundary extends React.Component<
+  React.PropsWithChildren,
+  { error: string | null }
+> {
+  state = { error: null as string | null };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[GameVault] React startup error", error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, background: "#100d18", color: "#f5f3ff", fontFamily: "Arial, sans-serif" }}>
+          <div style={{ maxWidth: 560 }}>
+            <h1>GameVault chưa thể mở giao diện</h1>
+            <p style={{ color: "#c4b5fd", overflowWrap: "anywhere" }}>{this.state.error}</p>
+            <p style={{ color: "#9b92ad", fontSize: 13 }}>Hãy gửi nội dung lỗi này cho nhóm phát triển để kiểm tra.</p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const rootElement = document.getElementById("root") as HTMLElement;
+ReactDOM.createRoot(rootElement).render(
+  <React.StrictMode>
+    <StartupErrorBoundary>
+      <App />
+    </StartupErrorBoundary>
+  </React.StrictMode>,
+);
+rootElement.dataset.ready = "1";'''
+)
+main_path.write_text(main)
 PY
 
 echo "GameVault Android identity prepared."
