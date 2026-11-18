@@ -38,6 +38,9 @@ strings_path.write_text(strings)
 
 manifest_path = root / "android/app/src/main/AndroidManifest.xml"
 manifest = manifest_path.read_text().replace('android:scheme="opennow"', 'android:scheme="gamevault"')
+# The Kotlin activity remains in the upstream package while the app namespace is
+# rebranded. Use its explicit class name so Android resolves the launcher reliably.
+manifest = manifest.replace('android:name=".MainActivity"', 'android:name="com.zortos.opennow.MainActivity"')
 manifest_path.write_text(manifest)
 
 activity_path = root / "android/app/src/main/java/com/zortos/opennow/MainActivity.kt"
@@ -122,6 +125,8 @@ boot_markup = """<div id="root">
         }, 12000);
       })();
     </script>"""
+if '<div id="root"></div>' not in index:
+    raise SystemExit("Could not install GameVault startup fallback: root element marker changed.")
 index = index.replace('<div id="root"></div>', boot_markup)
 index_path.write_text(index)
 
@@ -169,6 +174,20 @@ ReactDOM.createRoot(rootElement).render(
   </React.StrictMode>,
 );
 rootElement.dataset.ready = "1";'''
+)
+if "class StartupErrorBoundary" not in main:
+    raise SystemExit("Could not install GameVault React startup error boundary: main.tsx entrypoint changed.")
+# Mark the WebView ready only after React has actually replaced the boot screen.
+# This keeps the 12-second fallback useful when React never mounts.
+main = main.replace(
+    'rootElement.dataset.ready = "1";',
+    '''const startupObserver = new MutationObserver(() => {
+  if (!rootElement.querySelector("#gamevault-boot") && rootElement.childNodes.length > 0) {
+    rootElement.dataset.ready = "1";
+    startupObserver.disconnect();
+  }
+});
+startupObserver.observe(rootElement, { childList: true, subtree: true });'''
 )
 main_path.write_text(main)
 PY
