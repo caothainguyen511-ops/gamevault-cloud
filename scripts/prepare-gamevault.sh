@@ -190,14 +190,10 @@ main = main.replace(
 startupObserver.observe(rootElement, { childList: true, subtree: true });'''
 )
 main_path.write_text(main)
-PY
-
-# Normalize login-provider responses from Capacitor. The native plugin currently
-# resolves a JSArray, while some plugin versions wrap the same data in {providers: []}.
-# Without this normalization the renderer can show an empty provider selector.
+# Normalize the Capacitor login-provider response before the renderer reads it.
 api_path = renderer / "src/platform/api.ts"
 api_source = api_path.read_text()
-old_provider = 'getLoginProviders: () =>\n      callNativePlugin<{ providers: any[] }>("getLoginProviders").then((r) => r.providers ?? []),'
+old_provider = 'getLoginProviders: ()\\n      callNativePlugin<{ providers: any[] }>("getLoginProviders").then((r) => r.providers ?? []),'
 new_provider = '''getLoginProviders: () =>
       callNativePlugin<any>("getLoginProviders").then((r) => {
         const providers = Array.isArray(r)
@@ -218,5 +214,7 @@ new_provider = '''getLoginProviders: () =>
 if old_provider not in api_source:
     raise SystemExit("Could not patch Android login-provider response shape; source changed.")
 api_path.write_text(api_source.replace(old_provider, new_provider))
+
+PY
 
 echo "GameVault Android identity prepared."
