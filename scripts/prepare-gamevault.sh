@@ -79,7 +79,7 @@ css_path.write_text(css)
 
 # Keep the WebView inspectable in debug builds so startup failures can be diagnosed.
 config["android"]["webContentsDebuggingEnabled"] = True
-config_path.write_text(json.dumps(config, indent=2) + "\\n")
+config_path.write_text(json.dumps(config, indent=2) + "\n")
 
 # A visible boot fallback prevents a failed WebView bundle from looking like a blank app.
 index_path = renderer / "index.html"
@@ -129,7 +129,7 @@ index_path.write_text(index)
 main_path = renderer / "src/main.tsx"
 main = main_path.read_text()
 main = main.replace(
-    'ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(\\n  <React.StrictMode>\\n    <App />\\n  </React.StrictMode>,\\n);',
+    'ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>,\n);',
     '''class StartupErrorBoundary extends React.Component<
   React.PropsWithChildren,
   { error: string | null }
