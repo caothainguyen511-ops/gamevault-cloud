@@ -6,46 +6,10 @@ RENDERER="$ROOT/engine/opennow-stable/src/renderer/src"
 PLUGIN="$ANDROID/app/src/main/java/com/gamevault/nativeemulator/GameVaultEmulatorPlugin.kt"
 ACTIVITY="$ANDROID/app/src/main/java/com/zortos/opennow/MainActivity.kt"
 
+MANAGER="$ANDROID/app/src/main/java/com/gamevault/nativeemulator/GameVaultRuntimeManager.kt"
 mkdir -p "$(dirname "$PLUGIN")" "$RENDERER/native" "$RENDERER/components"
-cat > "$PLUGIN" <<'KOTLIN'
-package com.gamevault.nativeemulator
-
-import android.os.Build
-import com.getcapacitor.JSObject
-import com.getcapacitor.Plugin
-import com.getcapacitor.PluginCall
-import com.getcapacitor.PluginMethod
-import com.getcapacitor.annotation.CapacitorPlugin
-
-/** Reports actual runtime capabilities; never claims EXE support without Wine/Box64. */
-@CapacitorPlugin(name = "GameVaultEmulator")
-class GameVaultEmulatorPlugin : Plugin() {
-    @PluginMethod
-    fun getCapabilities(call: PluginCall) {
-        val result = JSObject()
-        result.put("androidApi", Build.VERSION.SDK_INT)
-        result.put("supportedAbi", Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown")
-        result.put("runtimeInstalled", false)
-        result.put("wineAvailable", false)
-        result.put("box64Available", false)
-        result.put("box86Available", false)
-        result.put("graphicsBackendAvailable", false)
-        result.put("canLaunchExe", false)
-        result.put("status", "runtime_not_integrated")
-        result.put("message", "Windows runtime is not installed in this build. Cloud gaming remains available.")
-        call.resolve(result)
-    }
-
-    @PluginMethod
-    fun launchExe(call: PluginCall) {
-        call.reject(
-            "Local EXE launch is disabled until Wine, the architecture translator, and graphics backend are integrated and tested.",
-            "RUNTIME_NOT_INSTALLED"
-        )
-    }
-}
-KOTLIN
-
+cp "$ROOT/engine-native/GameVaultRuntimeManager.kt" "$MANAGER"
+cp "$ROOT/engine-native/GameVaultEmulatorPlugin.kt" "$PLUGIN"
 python3 - "$ACTIVITY" "$RENDERER" <<'PY'
 from pathlib import Path
 import sys
@@ -67,28 +31,7 @@ if reg not in s:
 activity.write_text(s)
 
 native = renderer / "native" / "GameVaultEmulator.ts"
-native.write_text("""import { registerPlugin } from "@capacitor/core";
-
-export interface EmulatorCapabilities {
-  androidApi: number;
-  supportedAbi: string;
-  runtimeInstalled: boolean;
-  wineAvailable: boolean;
-  box64Available: boolean;
-  box86Available: boolean;
-  graphicsBackendAvailable: boolean;
-  canLaunchExe: boolean;
-  status: string;
-  message: string;
-}
-
-interface GameVaultEmulatorPlugin {
-  getCapabilities(): Promise<EmulatorCapabilities>;
-  launchExe(options: { uri: string }): Promise<void>;
-}
-
-export const GameVaultEmulator = registerPlugin<GameVaultEmulatorPlugin>("GameVaultEmulator");
-""")
+native.write_text("import { registerPlugin } from \"@capacitor/core\";\n\nexport interface GameVaultEmulatorCapabilities {\n  androidApi: number;\n  supportedAbi: string;\n  runtimeInstalled: boolean;\n  wineAvailable: boolean;\n  box64Available: boolean;\n  box86Available: boolean;\n  graphicsBackendAvailable: boolean;\n  canLaunchExe: boolean;\n  prefixReady: boolean;\n  status: string;\n  message: string;\n}\nexport interface PrefixResult { ready: boolean; path: string; message: string; }\ninterface GameVaultEmulatorPlugin {\n  getCapabilities(): Promise<GameVaultEmulatorCapabilities>;\n  initializePrefix(): Promise<PrefixResult>;\n  launchExe(options: { uri: string }): Promise<void>;\n}\nexport const GameVaultEmulator =\n  registerPlugin<GameVaultEmulatorPlugin>(\"GameVaultEmulator\");\n")
 
 page = renderer / "components" / "LocalEmulatorPage.tsx"
 page.write_text("""import { useCallback, useEffect, useState } from "react";
@@ -100,6 +43,8 @@ export function LocalEmulatorPage(): JSX.Element {
   const [capabilities, setCapabilities] = useState<EmulatorCapabilities | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [prefixMessage, setPrefixMessage] = useState<string | null>(null);
+  const [prefixBusy, setPrefixBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
