@@ -1,0 +1,82 @@
+name: GameVault Hybrid Android CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "feature/**"
+      - "fix/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gamevault-hybrid-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-cloud-and-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout with pinned OpenNow engine
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Verify expected project files
+        shell: bash
+        run: |
+          test -f scripts/prepare-gamevault.sh
+          test -f scripts/inject-native-emulator-bridge.sh
+          test -f engine/opennow-stable/package.json
+          test -f engine/opennow-stable/android/gradlew
+          test -f engine/opennow-stable/android/app/build.gradle
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: engine/opennow-stable/package-lock.json
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install Android SDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Apply GameVault identity
+        run: bash scripts/prepare-gamevault.sh
+
+      - name: Install cloud client dependencies
+        working-directory: engine/opennow-stable
+        run: npm ci
+
+      - name: Build cloud/WebRTC renderer
+        working-directory: engine/opennow-stable
+        run: npm run build
+
+      - name: Sync Capacitor Android
+        working-directory: engine/opennow-stable
+        run: npx cap sync android
+
+      - name: Inject native emulator capability bridge
+        run: bash scripts/inject-native-emulator-bridge.sh
+
+      - name: Build APK with bounded retries
+        run: bash scripts/build-android-retry.sh
+
+      - name: Upload verified debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GameVault-Hybrid-debug-apk
+          path: engine/opennow-stable/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
