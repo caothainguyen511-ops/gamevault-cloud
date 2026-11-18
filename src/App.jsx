@@ -1,45 +1,20 @@
-import React, { useMemo, useState } from "react";
-import { Activity, ArrowDownRight, ArrowUpRight, Bell, Bluetooth, Check, ChevronRight, CircleHelp, Cloud, Command, Gamepad2, Gauge, Grid2X2, Headphones, Library, Monitor, MoreHorizontal, Play, Plus, Search, Settings2, ShieldCheck, SlidersHorizontal, Sparkles, Star, Wifi, X } from "lucide-react";
-
-const games = [
-  { name:"Cyberpunk 2077", studio:"CD PROJEKT RED", genre:"RPG · OPEN WORLD", art:"cyber", mark:"2077", time:"12.4 HRS", tag:"CONTINUE" },
-  { name:"Apex Legends", studio:"RESPAWN", genre:"BATTLE ROYALE", art:"apex", mark:"APEX", time:"8.1 HRS", tag:"POPULAR" },
-  { name:"Forza Horizon 5", studio:"PLAYGROUND GAMES", genre:"RACING · OPEN WORLD", art:"forza", mark:"FH5", time:"5.6 HRS", tag:"RACING" },
-  { name:"The Witcher 3", studio:"CD PROJEKT RED", genre:"ACTION RPG", art:"witcher", mark:"WILD HUNT", time:"22.0 HRS", tag:"FAVORITE" }
-];
-function App(){
- const [tab,setTab]=useState("Overview"),[query,setQuery]=useState(""),[profile,setProfile]=useState("Balanced"),[showSettings,setShowSettings]=useState(false),[notice,setNotice]=useState("");
- const filtered=useMemo(()=>games.filter(g=>g.name.toLowerCase().includes(query.toLowerCase())),[query]);
- const nav=[["Overview",Grid2X2],["My Library",Library],["Controller",Gamepad2],["Performance",Gauge]];
- const toast=(s)=>{setNotice(s);setTimeout(()=>setNotice(""),2300)};
- return <div className="app-shell">
-  <aside className="sidebar">
-   <div className="brand"><div className="brand-icon"><Command size={21}/></div><div><b>GAMEVAULT</b><small>CLOUD PLATFORM</small></div></div>
-   <div className="side-label">WORKSPACE</div>
-   <nav>{nav.map(([n,I])=><button key={n} className={tab===n?"nav-item active":"nav-item"} onClick={()=>setTab(n)}><I size={18}/><span>{n}</span>{n==="My Library"&&<em>04</em>}</button>)}</nav>
-   <div className="side-spacer"/>
-   <div className="connection-card"><div className="connection-top"><span className="live-dot"/> SYSTEM READY</div><b>Cloud link idle</b><small>Connect a supported service to start a session.</small><div className="connection-line"><span/></div><button onClick={()=>toast("Cloud connection setup will be added with the streaming engine.")}>SET UP CONNECTION <ChevronRight size={13}/></button></div>
-   <button className="profile" onClick={()=>toast("Profile settings are coming soon.")}><div className="avatar">GV</div><div><b>Player One</b><small>Local profile</small></div><MoreHorizontal size={19}/></button>
-  </aside>
-  <main className="main">
-   <header className="topbar"><div className="crumb">GAMEVAULT <span>/</span> {tab.toUpperCase()}</div><div className="top-actions"><div className="status-pill"><span className="live-dot"/> ALL SYSTEMS NORMAL</div><button className="icon-btn" onClick={()=>toast("You're all caught up.")}><Bell size={18}/></button><button className="icon-btn" onClick={()=>setShowSettings(true)}><Settings2 size={18}/></button></div></header>
-   {tab==="Overview"||tab==="My Library"? <div className="content">
-    <section className="welcome"><div><div className="eyebrow"><Sparkles size={13}/> YOUR PERSONAL PLAY SPACE</div><h1>{tab==="Overview"?"Play without the wait.":"Your collection, in one place."}</h1><p>{tab==="Overview"?"One dashboard for your cloud sessions, favorite titles, and play setup.":"Pick up where you left off or explore your saved titles."}</p></div><div className="date-block"><span>YOUR VAULT</span><b>GAMING<br/>PROFILE <i>01</i></b></div></section>
-    {tab==="Overview"&&<section className="hero-card"><div className="hero-noise"/><div className="hero-content"><div className="hero-kicker"><span className="tag">FEATURED SESSION</span><span className="mono">GV / 001</span></div><div className="hero-title">THE NIGHT<br/><i>IS YOURS.</i></div><p>Your next session starts here. Choose a title from your library and connect a cloud gaming service.</p><button className="primary-btn" onClick={()=>toast("Connect a cloud gaming service before starting a session.")}><Play size={15} fill="currentColor"/> START A SESSION</button></div><div className="hero-orbit"><div className="orbit o1"/><div className="orbit o2"/><div className="orbit-core"><Command size={54}/></div><span className="orbit-label">GV / CLOUD</span></div><div className="hero-index">01 <span>— 04</span></div></section>}
-    <section className="stats-grid">
-     <div className="stat-card"><div className="stat-head">LIBRARY SIZE <Library size={16}/></div><b>04 <small>TITLES</small></b><span className="stat-foot">Your saved collection</span></div>
-     <div className="stat-card"><div className="stat-head">PLAY TIME <Activity size={16}/></div><b>48.1 <small>HRS</small></b><span className="stat-foot">Across sample activity</span></div>
-     <div className="stat-card"><div className="stat-head">DEVICE STATUS <Monitor size={16}/></div><b className="stat-word">NOT LINKED</b><span className="stat-foot">Connect a device to continue</span></div>
-    </section>
-    <section className="library-section"><div className="section-head"><div><div className="eyebrow">CURATED FOR YOU</div><h2>{tab==="Overview"?"Recently in your vault":"All titles"}</h2></div><div className="library-tools"><div className="searchbox"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a game..."/>{query&&<button onClick={()=>setQuery("")}><X size={13}/></button>}</div><button className="filter-btn" onClick={()=>toast("Filters will be available in the library update.")}><SlidersHorizontal size={16}/></button></div></div>
-     <div className="game-grid">{filtered.map((g,i)=><article className="game-card" key={g.name}><div className={"game-art "+g.art}><span className="art-code">GV / 0{i+1}</span><strong>{g.mark}</strong><span className="art-bottom">{g.genre}</span><button className="star-btn" onClick={()=>toast(g.name+" saved to favorites.")}><Star size={15}/></button></div><div className="game-meta"><div><b>{g.name}</b><small>{g.studio}</small></div><span className="playtime">{g.time}</span></div><button className="game-action" onClick={()=>toast("Streaming is not connected yet. This is a UI preview.")}>{g.tag==="CONTINUE"?"RESUME TITLE":"VIEW DETAILS"} <ArrowUpRight size={14}/></button></article>)}</div>
-     {filtered.length===0&&<div className="empty">No titles match “{query}”.</div>}
-    </section>
-   </div>:<div className="subpage"><div className="eyebrow">GAMEVAULT MODULE</div><h1>{tab}</h1><p>This section is being prepared as part of the original GameVault experience.</p><div className="module-card"><div className="module-icon">{tab==="Controller"?<Gamepad2/>:<Gauge/>}</div><div><b>{tab==="Controller"?"Controller center":"Performance lab"}</b><small>{tab==="Controller"?"Pair a controller and configure your preferred input layout.":"Review stream quality, latency, and connection health during a session."}</small></div><span className="coming">COMING NEXT</span></div></div>}
-   <footer><span>GAMEVAULT CLOUD <i>BUILD 0.1.0 / UI PREVIEW</i></span><span>INDEPENDENT PROJECT <span className="footer-dot">●</span> NOT AFFILIATED WITH NVIDIA</span></footer>
-  </main>
-  {showSettings&&<div className="modal-backdrop" onClick={()=>setShowSettings(false)}><div className="settings-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><div className="eyebrow">PREFERENCES</div><h2>Quick settings</h2></div><button className="icon-btn" onClick={()=>setShowSettings(false)}><X/></button></div><label>STREAM PROFILE <span>Preview only</span></label><div className="profile-options">{["Quality","Balanced","Performance"].map(p=><button key={p} className={profile===p?"selected":""} onClick={()=>setProfile(p)}>{p}{profile===p&&<Check size={14}/>}</button>)}</div><div className="setting-row"><div><b>Controller support</b><small>Configure input after connecting a device</small></div><Gamepad2/></div><div className="setting-row"><div><b>Network diagnostics</b><small>Metrics appear during an active stream</small></div><Wifi/></div><button className="primary-btn full" onClick={()=>{setShowSettings(false);toast("Preferences saved locally for this preview.")}}>SAVE PREFERENCES</button></div></div>}
-  {notice&&<div className="toast"><Check size={16}/>{notice}</div>}
+import React,{useMemo,useState} from "react";
+import {Search,Gamepad2,Download,ShieldCheck,Menu,X,ArrowUpRight,Filter,Library,Wallet,Star} from "lucide-react";
+import catalog from "./games.json";
+import "./store.css";
+export default function App(){
+ const [q,setQ]=useState(""),[cat,setCat]=useState("Tất cả"),[selected,setSelected]=useState(null),[mobile,setMobile]=useState(false);
+ const categories=["Tất cả",...new Set(catalog.map(g=>g.category))];
+ const items=useMemo(()=>catalog.filter(g=>(cat==="Tất cả"||g.category===cat)&&g.name.toLowerCase().includes(q.toLowerCase())),[q,cat]);
+ return <div className="store">
+  <header className="store-head"><a className="logo" href="#"><span><Gamepad2/></span> GAME<span>VAULT</span></a><nav className={mobile?"open":""}><a href="#games">Khám phá</a><a href="#about">Giới thiệu</a><a href="#footer">Hỗ trợ</a></nav><button className="menu" onClick={()=>setMobile(!mobile)}>{mobile?<X/>:<Menu/>}</button><a className="account" href="#account">Tài khoản <ArrowUpRight size={16}/></a></header>
+  <main><section className="store-hero"><div className="hero-copy"><div className="eyebrow"><span/> GAME LIBRARY · 2026</div><h1>Kho game của<br/><em>bạn bắt đầu tại đây.</em></h1><p>Khám phá thư viện game port, xem thông tin và tìm phiên bản phù hợp với thiết bị của bạn.</p><a className="cta" href="#games">Khám phá thư viện <ArrowUpRight size={17}/></a></div><div className="hero-art"><div className="orbit one"/><div className="orbit two"/><div className="console"><Gamepad2 size={100}/></div><span className="float f1">YOUR NEXT GAME</span><span className="float f2">GV / 001</span></div><div className="hero-foot"><span>01 — GAMEVAULT LIBRARY</span><span>DISCOVER · EXPLORE · PLAY</span></div></section>
+ <section className="catalog" id="games"><div className="section-top"><div><div className="eyebrow">THE COLLECTION</div><h2>Thư viện <i>game</i></h2><p>{catalog.length} tựa game trong danh mục</p></div><div className="search"><Search size={18}/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm tên game..."/>{q&&<button onClick={()=>setQ("")}>×</button>}</div></div>
+ <div className="filters"><Filter size={16}/>{categories.map(c=><button key={c} className={cat===c?"chosen":""} onClick={()=>setCat(c)}>{c}</button>)}</div>
+ <div className="cards">{items.map(g=><article className="game" key={g.id} onClick={()=>setSelected(g)}><div className="cover"><img src={g.image} alt={g.name} loading="lazy"/><span className="cover-number">GV / {String(g.id).padStart(2,"0")}</span><span className="cover-category">{g.category}</span><button className="details" aria-label="Chi tiết"><ArrowUpRight/></button></div><div className="game-info"><h3>{g.name}</h3><p>{g.description||"Thông tin phiên bản đang được cập nhật."}</p><button onClick={e=>{e.stopPropagation();setSelected(g)}}>Xem chi tiết <ArrowUpRight size={15}/></button></div></article>)}</div>
+ {items.length===0&&<div className="empty">Không tìm thấy game phù hợp.</div>}</section>
+ <section className="trust" id="about"><div><ShieldCheck/><h3>Thông tin minh bạch</h3><p>Hiển thị mô tả, thể loại và thông tin phiên bản trước khi tải.</p></div><div><Library/><h3>Thư viện tập trung</h3><p>Tìm kiếm và lọc game trong một giao diện duy nhất.</p></div><div><Wallet/><h3>GameVault account</h3><p>Khu vực tài khoản và dịch vụ thành viên sẽ được tích hợp khi cấu hình backend.</p></div></section></main>
+ <footer id="footer"><a className="logo" href="#"><span><Gamepad2/></span> GAME<span>VAULT</span></a><p>Independent game catalog · GameVault</p><small>Chỉ tải nội dung bạn sở hữu hoặc được phép phân phối. Các liên kết tải sẽ được bật sau khi xác minh quyền phân phối.</small></footer>
+ {selected&&<div className="overlay" onClick={()=>setSelected(null)}><div className="detail" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelected(null)}><X/></button><img src={selected.image} alt={selected.name}/><div><div className="eyebrow">{selected.category}</div><h2>{selected.name}</h2><p>{selected.description||"Thông tin phiên bản đang được cập nhật."}</p><div className="download-locked"><ShieldCheck/> Link tải đang chờ xác minh quyền phân phối.</div></div></div></div>}
  </div>
 }
-export default App;
